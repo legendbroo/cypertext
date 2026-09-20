@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cipher Lab — Classical Cryptography</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0A0F1E;
+    --surface:   #111827;
+    --border:    #1E2D45;
+    --accent:    #3B82F6;
+    --accent-dim:#1D4ED8;
+    --text:      #F1F5F9;
+    --muted:     #64748B;
+    --slate:     #94A3B8;
+    --green:     #10B981;
+    --mono:      'JetBrains Mono', monospace;
+    --sans:      'Inter', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    background: rgba(10,15,30,0.92);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+  }
+  .logo-mark {
+    width: 34px; height: 34px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-family: var(--mono);
+    font-size: 16px; font-weight: 600;
+    color: #fff; flex-shrink: 0;
+  }
+  .logo-text { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+  .logo-sub  { font-size: 12px; color: var(--muted); margin-left: 2px; }
+  .badge {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 100px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 56px 32px 40px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.8px;
+    margin-bottom: 14px;
+  }
+  .hero h1 span { color: var(--accent); }
+  .hero p {
+    color: var(--slate);
+    font-size: 15px;
+    max-width: 520px;
+    margin-bottom: 32px;
+    line-height: 1.7;
+  }
+
+  /* ── CIPHER TABS ── */
+  .cipher-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 0 32px;
+    max-width: 860px;
+    margin: 0 auto 32px;
+  }
+  .tab-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--slate);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tab-btn .tab-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .tab-btn:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .tab-btn.active .tab-num { color: rgba(255,255,255,0.7); }
+
+  /* ── MAIN CONTENT ── */
+  .cipher-panel {
+    max-width: 860px;
+    margin: 0 auto 60px;
+    padding: 0 32px;
+    display: none;
+  }
+  .cipher-panel.active { display: block; }
+
+  .panel-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* ── TOOL CARD ── */
+  .tool-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .tool-card h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .tool-card h2 .chip {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: rgba(59,130,246,0.15);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 400;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.4px;
+  }
+
+  textarea, input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.15s;
+  }
+  textarea:focus, input:focus {
+    border-color: var(--accent);
+  }
+  textarea { min-height: 88px; }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .input-row > div { flex: 1; }
+
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    margin: 14px 0;
+  }
+  .btn {
+    flex: 1;
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: none;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--accent-dim); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--slate);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--text); }
+
+  .output-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    min-height: 88px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--green);
+    word-break: break-all;
+    white-space: pre-wrap;
+    position: relative;
+    transition: border-color 0.15s;
+  }
+  .output-box.has-content { border-color: rgba(16,185,129,0.3); }
+
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .copy-btn:hover { color: var(--text); }
+
+  .field-mb { margin-bottom: 14px; }
+
+  /* ── INFO CARD ── */
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    position: sticky;
+    top: 80px;
+  }
+  .info-card .cipher-icon {
+    font-family: var(--mono);
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 14px;
+    line-height: 1;
+  }
+  .info-card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .info-card .subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 18px;
+    font-family: var(--mono);
+  }
+  .info-card p {
+    font-size: 13.5px;
+    color: var(--slate);
+    line-height: 1.75;
+    margin-bottom: 18px;
+  }
+  .info-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 18px 0;
+  }
+  .info-card h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 10px;
+    letter-spacing: 0.3px;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .stat-label { font-size: 12px; color: var(--muted); }
+  .stat-val {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .stat-val.bad  { color: #F87171; border-color: rgba(248,113,113,0.3); }
+  .stat-val.ok   { color: #FCD34D; border-color: rgba(252,211,77,0.3); }
+  .stat-val.good { color: var(--green); border-color: rgba(16,185,129,0.3); }
+
+  .example-block {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.8;
+    border: 1px solid var(--border);
+  }
+  .ex-label { color: var(--muted); }
+  .ex-plain { color: var(--text); }
+  .ex-cipher { color: var(--green); }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 32px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+  footer span { color: var(--accent); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    header { padding: 14px 16px; }
+    .hero, .cipher-tabs, .cipher-panel { padding-left: 16px; padding-right: 16px; }
+    .panel-grid { grid-template-columns: 1fr; }
+    .info-card { position: static; }
+    .hero { padding-top: 32px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">C</div>
+  <div>
+    <div class="logo-text">Cipher Lab</div>
+    <div class="logo-sub">Classical Cryptography</div>
+  </div>
+  <div class="badge">TYIT · Cryptography</div>
+</header>
+
+<section class="hero">
+  <h1>Four ciphers.<br><span>One lab.</span></h1>
+  <p>Type any message, pick a cipher, and watch it transform. Each tool includes the algorithm, a worked example, and a security note — everything you need to understand classical cryptography.</p>
+</section>
+
+<div class="cipher-tabs">
+  <button class="tab-btn active" onclick="switchTab('caesar')">
+    <span class="tab-num">01</span> Caesar Cipher
+  </button>
+  <button class="tab-btn" onclick="switchTab('vigenere')">
+    <span class="tab-num">02</span> Vigenère Cipher
+  </button>
+  <button class="tab-btn" onclick="switchTab('railfence')">
+    <span class="tab-num">03</span> Rail Fence Cipher
+  </button>
+  <button class="tab-btn" onclick="switchTab('columnar')">
+    <span class="tab-num">04</span> Columnar Transposition
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PANEL 1: CAESAR -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="cipher-panel active" id="panel-caesar">
+  <div class="panel-grid">
+    <div class="tool-card">
+      <h2>Caesar Cipher <span class="chip">substitution</span></h2>
+
+      <div class="field-mb">
+        <label>Plaintext message</label>
+        <textarea id="c-input" placeholder="Type your message here…" oninput="caesarRun()"></textarea>
+      </div>
+
+      <div class="input-row">
+        <div>
+          <label>Shift (key)</label>
+          <input type="number" id="c-shift" value="3" min="1" max="25" oninput="caesarRun()">
+        </div>
+        <div>
+          <label>Mode</label>
+          <select id="c-mode" onchange="caesarRun()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 12px;outline:none;">
+            <option value="enc">Encrypt</option>
+            <option value="dec">Decrypt</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Output</label>
+      <div class="output-box" id="c-output">
+        <button class="copy-btn" onclick="copyOut('c-output')">copy</button>
+        <span id="c-out-text"></span>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="cipher-icon">A→D</div>
+      <h3>Caesar Cipher</h3>
+      <div class="subtitle">Classical · Substitution · ~100 BC</div>
+      <p>Named after Julius Caesar who used it to protect military messages. Every letter in the plaintext is replaced by a letter a fixed number of positions down the alphabet. With a shift of 3, A becomes D, B becomes E, and so on.</p>
+      <p>To decrypt, simply reverse the shift. Since there are only 25 possible shifts, an attacker can try all of them in seconds — making this historically important but cryptographically broken.</p>
+      <hr class="info-divider">
+      <h4>Worked Example (shift = 3)</h4>
+      <div class="example-block">
+        <div><span class="ex-label">Plain  : </span><span class="ex-plain">HELLO</span></div>
+        <div><span class="ex-label">Cipher : </span><span class="ex-cipher">KHOOR</span></div>
+        <div><span class="ex-label">Rule   : </span><span class="ex-plain">H+3=K, E+3=H…</span></div>
+      </div>
+      <hr class="info-divider">
+      <h4>Security Profile</h4>
+      <div class="stat-row"><span class="stat-label">Key space</span><span class="stat-val bad">25 possibilities</span></div>
+      <div class="stat-row"><span class="stat-label">Attack</span><span class="stat-val bad">Brute force</span></div>
+      <div class="stat-row"><span class="stat-label">Use today</span><span class="stat-val bad">None</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PANEL 2: VIGENÈRE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="cipher-panel" id="panel-vigenere">
+  <div class="panel-grid">
+    <div class="tool-card">
+      <h2>Vigenère Cipher <span class="chip">polyalphabetic</span></h2>
+
+      <div class="field-mb">
+        <label>Plaintext message</label>
+        <textarea id="v-input" placeholder="Type your message here…" oninput="vigenereRun()"></textarea>
+      </div>
+
+      <div class="input-row">
+        <div>
+          <label>Keyword (letters only)</label>
+          <input type="text" id="v-key" value="KEY" placeholder="e.g. SECRET" oninput="vigenereRun()">
+        </div>
+        <div>
+          <label>Mode</label>
+          <select id="v-mode" onchange="vigenereRun()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 12px;outline:none;">
+            <option value="enc">Encrypt</option>
+            <option value="dec">Decrypt</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Output</label>
+      <div class="output-box" id="v-output">
+        <button class="copy-btn" onclick="copyOut('v-output')">copy</button>
+        <span id="v-out-text"></span>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="cipher-icon">K,E,Y</div>
+      <h3>Vigenère Cipher</h3>
+      <div class="subtitle">Classical · Polyalphabetic · 16th century</div>
+      <p>Blaise de Vigenère described this in 1586. It uses a keyword repeated to match the length of the message. Each letter of the keyword defines a Caesar shift for the corresponding plaintext letter — so the shift changes with every character.</p>
+      <p>This defeated frequency analysis for 300 years and was called "le chiffre indéchiffrable." Babbage and Kasiski eventually cracked it in the 1800s by finding repeated key patterns.</p>
+      <hr class="info-divider">
+      <h4>Worked Example (key = KEY)</h4>
+      <div class="example-block">
+        <div><span class="ex-label">Plain  : </span><span class="ex-plain">HELLO</span></div>
+        <div><span class="ex-label">Key    : </span><span class="ex-plain">KEYKE</span></div>
+        <div><span class="ex-label">Cipher : </span><span class="ex-cipher">RIJVS</span></div>
+        <div><span class="ex-label">Rule   : </span><span class="ex-plain">H+K=R, E+E=I…</span></div>
+      </div>
+      <hr class="info-divider">
+      <h4>Security Profile</h4>
+      <div class="stat-row"><span class="stat-label">Key space</span><span class="stat-val ok">26ⁿ possibilities</span></div>
+      <div class="stat-row"><span class="stat-label">Attack</span><span class="stat-val ok">Kasiski analysis</span></div>
+      <div class="stat-row"><span class="stat-label">Use today</span><span class="stat-val bad">Education only</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PANEL 3: RAIL FENCE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="cipher-panel" id="panel-railfence">
+  <div class="panel-grid">
+    <div class="tool-card">
+      <h2>Rail Fence Cipher <span class="chip">transposition</span></h2>
+
+      <div class="field-mb">
+        <label>Plaintext message</label>
+        <textarea id="r-input" placeholder="Type your message here…" oninput="railRun()"></textarea>
+      </div>
+
+      <div class="input-row">
+        <div>
+          <label>Number of rails</label>
+          <input type="number" id="r-rails" value="3" min="2" max="10" oninput="railRun()">
+        </div>
+        <div>
+          <label>Mode</label>
+          <select id="r-mode" onchange="railRun()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 12px;outline:none;">
+            <option value="enc">Encrypt</option>
+            <option value="dec">Decrypt</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Rail pattern visualisation</label>
+      <div class="output-box" id="r-visual" style="color:var(--slate);margin-bottom:14px;min-height:60px;font-size:12px;"></div>
+
+      <label>Output</label>
+      <div class="output-box" id="r-output">
+        <button class="copy-btn" onclick="copyOut('r-output')">copy</button>
+        <span id="r-out-text"></span>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="cipher-icon">/\/\</div>
+      <h3>Rail Fence Cipher</h3>
+      <div class="subtitle">Classical · Transposition · Ancient</div>
+      <p>A transposition cipher — letters are not replaced, only rearranged. The message is written diagonally across a set of "rails" (rows), going down then up in a zigzag. The ciphertext is formed by reading each rail left to right.</p>
+      <p>Unlike substitution ciphers, frequency of letters is preserved, making it easier to identify. With only a few possible rail counts, brute force is trivial. It is historically associated with the Spartans' skytale device.</p>
+      <hr class="info-divider">
+      <h4>Worked Example (3 rails)</h4>
+      <div class="example-block">
+        <div><span class="ex-label">Plain : </span><span class="ex-plain">WEAREDISCOVERED</span></div>
+        <div><span class="ex-label">Rail1 : </span><span class="ex-cipher">W . . . E . . . I . . . V . .</span></div>
+        <div><span class="ex-label">Rail2 : </span><span class="ex-cipher">. E . R . D . S . O . E . E .</span></div>
+        <div><span class="ex-label">Rail3 : </span><span class="ex-cipher">. . A . . . C . . . R . . . D</span></div>
+        <div><span class="ex-label">Cipher: </span><span class="ex-cipher">WEIVERDSOEEACRD</span></div>
+      </div>
+      <hr class="info-divider">
+      <h4>Security Profile</h4>
+      <div class="stat-row"><span class="stat-label">Key space</span><span class="stat-val bad">Rail count only</span></div>
+      <div class="stat-row"><span class="stat-label">Attack</span><span class="stat-val bad">Brute force</span></div>
+      <div class="stat-row"><span class="stat-label">Use today</span><span class="stat-val bad">None</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PANEL 4: COLUMNAR -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="cipher-panel" id="panel-columnar">
+  <div class="panel-grid">
+    <div class="tool-card">
+      <h2>Columnar Transposition <span class="chip">transposition</span></h2>
+
+      <div class="field-mb">
+        <label>Plaintext message</label>
+        <textarea id="col-input" placeholder="Type your message here…" oninput="columnarRun()"></textarea>
+      </div>
+
+      <div class="input-row">
+        <div>
+          <label>Keyword (sets column order)</label>
+          <input type="text" id="col-key" value="ZEBRAS" placeholder="e.g. CRYPTO" oninput="columnarRun()">
+        </div>
+        <div>
+          <label>Mode</label>
+          <select id="col-mode" onchange="columnarRun()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 12px;outline:none;">
+            <option value="enc">Encrypt</option>
+            <option value="dec">Decrypt</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Grid visualisation</label>
+      <div class="output-box" id="col-visual" style="color:var(--slate);margin-bottom:14px;min-height:60px;font-size:12px;"></div>
+
+      <label>Output</label>
+      <div class="output-box" id="col-output">
+        <button class="copy-btn" onclick="copyOut('col-output')">copy</button>
+        <span id="col-out-text"></span>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="cipher-icon">col[]</div>
+      <h3>Columnar Transposition</h3>
+      <div class="subtitle">Classical · Transposition · 19th century</div>
+      <p>The message is written row by row into a grid whose width equals the keyword length. Columns are then read out in the alphabetical order of the keyword letters. The recipient reverses the process using the same keyword.</p>
+      <p>Used by German forces in both World Wars, often combined with other ciphers for added security. It is a true transposition — all original letters appear in the output, just rearranged.</p>
+      <hr class="info-divider">
+      <h4>Worked Example (key = ZEBRAS)</h4>
+      <div class="example-block">
+        <div><span class="ex-label">Key order: </span><span class="ex-plain">Z(6) E(2) B(1) R(4) A(3) S(5)</span></div>
+        <div><span class="ex-label">Grid →   : </span><span class="ex-plain">WE ARE DISCOV ERED</span></div>
+        <div><span class="ex-label">Read col : </span><span class="ex-plain">by alphabetic key order</span></div>
+        <div><span class="ex-label">Cipher   : </span><span class="ex-cipher">EVLNE ACDTK ESEAQ ROFOJ DEECU WIREE</span></div>
+      </div>
+      <hr class="info-divider">
+      <h4>Security Profile</h4>
+      <div class="stat-row"><span class="stat-label">Key space</span><span class="stat-val ok">n! permutations</span></div>
+      <div class="stat-row"><span class="stat-label">Attack</span><span class="stat-val ok">Anagramming</span></div>
+      <div class="stat-row"><span class="stat-label">Use today</span><span class="stat-val bad">Education only</span></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Cipher Lab · <span>Cryptography Subject Project</span> · TYIT · Built with HTML / CSS / JS
+</footer>
+
+<script>
+// ─── UTILS ──────────────────────────────────────────────
+function setOut(id, text) {
+  const box  = document.getElementById(id);
+  const span = document.getElementById(id.replace('-output', '-out-text'));
+  if (!span) return;
+  span.textContent = text;
+  box.classList.toggle('has-content', text.length > 0);
+}
+
+function copyOut(id) {
+  const span = document.getElementById(id.replace('-output', '-out-text'));
+  if (!span || !span.textContent) return;
+  navigator.clipboard.writeText(span.textContent).then(() => {
+    const btn = document.querySelector('#' + id + ' .copy-btn');
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 1500);
+  });
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.cipher-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  const tabs = document.querySelectorAll('.tab-btn');
+  const map  = { caesar:0, vigenere:1, railfence:2, columnar:3 };
+  tabs[map[name]].classList.add('active');
+}
+
+// ─── CAESAR ─────────────────────────────────────────────
+function caesarShift(text, shift, decrypt) {
+  if (decrypt) shift = (26 - shift % 26) % 26;
+  return text.replace(/[a-zA-Z]/g, ch => {
+    const base = ch >= 'a' ? 97 : 65;
+    return String.fromCharCode((ch.charCodeAt(0) - base + shift) % 26 + base);
+  });
+}
+function caesarRun() {
+  const text  = document.getElementById('c-input').value;
+  const shift = parseInt(document.getElementById('c-shift').value) || 3;
+  const dec   = document.getElementById('c-mode').value === 'dec';
+  setOut('c-output', caesarShift(text, shift, dec));
+}
+
+// ─── VIGENÈRE ───────────────────────────────────────────
+function vigenereProcess(text, key, decrypt) {
+  key = key.toUpperCase().replace(/[^A-Z]/g, '');
+  if (!key.length) return text;
+  let ki = 0, out = '';
+  for (const ch of text) {
+    if (/[a-zA-Z]/.test(ch)) {
+      const base  = ch >= 'a' ? 97 : 65;
+      const shift = key.charCodeAt(ki % key.length) - 65;
+      const s     = decrypt ? (26 - shift) % 26 : shift;
+      out += String.fromCharCode((ch.charCodeAt(0) - base + s) % 26 + base);
+      ki++;
+    } else { out += ch; }
+  }
+  return out;
+}
+function vigenereRun() {
+  const text = document.getElementById('v-input').value;
+  const key  = document.getElementById('v-key').value || 'KEY';
+  const dec  = document.getElementById('v-mode').value === 'dec';
+  setOut('v-output', vigenereProcess(text, key, dec));
+}
+
+// ─── RAIL FENCE ─────────────────────────────────────────
+function railFenceEncrypt(text, rails) {
+  const fence = Array.from({ length: rails }, () => []);
+  let rail = 0, dir = 1;
+  for (const ch of text) {
+    fence[rail].push(ch);
+    if (rail === 0) dir = 1;
+    else if (rail === rails - 1) dir = -1;
+    rail += dir;
+  }
+  return fence.map(r => r.join('')).join('');
+}
+
+function railFenceDecrypt(text, rails) {
+  const n = text.length;
+  const pattern = [];
+  let rail = 0, dir = 1;
+  for (let i = 0; i < n; i++) {
+    pattern.push(rail);
+    if (rail === 0) dir = 1;
+    else if (rail === rails - 1) dir = -1;
+    rail += dir;
+  }
+  const indices = pattern.map((r, i) => [r, i]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const result  = new Array(n);
+  for (let i = 0; i < n; i++) result[indices[i][1]] = text[i];
+  return result.join('');
+}
+
+function railVisual(text, rails) {
+  const rows = Array.from({ length: rails }, () => Array(text.length).fill(' '));
+  let rail = 0, dir = 1;
+  for (let i = 0; i < text.length; i++) {
+    rows[rail][i] = text[i] || '·';
+    if (rail === 0) dir = 1;
+    else if (rail === rails - 1) dir = -1;
+    rail += dir;
+  }
+  return rows.map((r, i) => `Rail ${i+1}: ${r.join('')}`).join('\n');
+}
+
+function railRun() {
+  const raw   = document.getElementById('r-input').value;
+  const rails = parseInt(document.getElementById('r-rails').value) || 3;
+  const dec   = document.getElementById('r-mode').value === 'dec';
+  const text  = raw.replace(/\s/g, '').toUpperCase();
+  const out   = dec ? railFenceDecrypt(text, rails) : railFenceEncrypt(text, rails);
+  document.getElementById('r-out-text').textContent = out;
+  document.getElementById('r-output').classList.toggle('has-content', out.length > 0);
+  document.getElementById('r-visual').textContent = text ? railVisual(dec ? out : text, rails) : '';
+}
+
+// ─── COLUMNAR TRANSPOSITION ─────────────────────────────
+function columnarEncrypt(text, key) {
+  text = text.replace(/\s/g, '').toUpperCase();
+  key  = key.toUpperCase().replace(/[^A-Z]/g, '');
+  if (!key.length) return text;
+  const cols   = key.length;
+  const padded = text.padEnd(Math.ceil(text.length / cols) * cols, 'X');
+  const grid   = [];
+  for (let i = 0; i < padded.length; i += cols) grid.push(padded.slice(i, i + cols).split(''));
+  const order = key.split('').map((ch, i) => [ch, i]).sort((a, b) => a[0].localeCompare(b[0])).map(x => x[1]);
+  return order.map(c => grid.map(row => row[c]).join('')).join('');
+}
+
+function columnarDecrypt(text, key) {
+  text = text.replace(/\s/g, '').toUpperCase();
+  key  = key.toUpperCase().replace(/[^A-Z]/g, '');
+  if (!key.length) return text;
+  const cols  = key.length;
+  const rows  = Math.ceil(text.length / cols);
+  const order = key.split('').map((ch, i) => [ch, i]).sort((a, b) => a[0].localeCompare(b[0])).map(x => x[1]);
+  const grid  = Array.from({ length: rows }, () => new Array(cols).fill(''));
+  let ptr = 0;
+  for (const c of order) {
+    for (let r = 0; r < rows; r++) {
+      if (ptr < text.length) grid[r][c] = text[ptr++];
+    }
+  }
+  return grid.map(r => r.join('')).join('').replace(/X+$/, '');
+}
+
+function columnarVisual(text, key) {
+  text = text.replace(/\s/g, '').toUpperCase();
+  key  = key.toUpperCase().replace(/[^A-Z]/g, '');
+  if (!key.length || !text.length) return '';
+  const cols   = key.length;
+  const padded = text.padEnd(Math.ceil(text.length / cols) * cols, 'X');
+  const grid   = [];
+  for (let i = 0; i < padded.length; i += cols) grid.push(padded.slice(i, i + cols));
+  const header = key.split('').join(' ');
+  const rows   = grid.map(r => r.split('').join(' ')).join('\n');
+  return `Key: ${header}\n${'─'.repeat(key.length * 2 - 1)}\n${rows}`;
+}
+
+function columnarRun() {
+  const raw = document.getElementById('col-input').value;
+  const key = document.getElementById('col-key').value || 'ZEBRAS';
+  const dec = document.getElementById('col-mode').value === 'dec';
+  const out = dec ? columnarDecrypt(raw, key) : columnarEncrypt(raw, key);
+  document.getElementById('col-out-text').textContent = out;
+  document.getElementById('col-output').classList.toggle('has-content', out.length > 0);
+  document.getElementById('col-visual').textContent = columnarVisual(dec ? out : raw.replace(/\s/g, '').toUpperCase(), key);
+}
+</script>
+</body>
+</html>
